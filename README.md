@@ -1,1 +1,1 @@
-# AWS-DevsecOps-3-tire-Project
+# AWS-DevSecOps-3-tire-Project
