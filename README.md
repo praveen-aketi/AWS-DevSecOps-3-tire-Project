@@ -24,27 +24,44 @@ A production-quality, **3-tier DevSecOps project** on AWS using **Terraform**, *
 ## 📁 Project Structure
 
 ```
+
 AWS-DevSecOps-3-tire-Project/
-├── backend/                  # Node.js backend service
-├── frontend/                 # Frontend React or static app
-├── infra/terraform/          # Terraform infrastructure definitions
+│
+├── backend/                   # Your application code (Node.js)
+├── frontend/                  # Your frontend application (React or static)
+│
+├── helm/
+│   ├── backend/               # Helm chart for backend
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   └── templates/
+│   │       ├── deployment.yaml
+│   │       ├── service.yaml
+│   │       └── _helpers.tpl
+│   └── frontend/              # Helm chart for frontend
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
+│           ├── deployment.yaml
+│           └── service.yaml
+│
+├── infra/terraform/           # Terraform for AWS infra, including EKS
 │   ├── main.tf
 │   ├── eks.tf
-│   └── ...other .tf files...
-├── helm/                     # Helm charts for backend and frontend apps
-│   ├── backend/
-│   └── frontend/
-├── k8s/                      # (Deprecated) Old Kubernetes manifests
-├── .github/workflows/        # CI & Security workflows
+│   └── other Terraform files
+│
+├── .github/workflows/         # Security & CI workflows
 │   ├── trivy.yml
 │   ├── checkov.yml
 │   ├── codeql.yml
 │   ├── sonar.yml
 │   ├── backend-ci.yml
 │   └── frontend-ci.yml
-└── argocd/                   # Argo CD app definitions
+│
+└── argocd/                    # GitOps specifications for ArgoCD
     ├── backend-app.yaml
     └── frontend-app.yaml
+
 ```
 
 ---
