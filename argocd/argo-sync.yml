@@ -1,0 +1,20 @@
+name: ArgoCD Sync
+
+on:
+  push:
+    paths:
+      - 'charts/**'
+      - 'argocd/**'
+
+jobs:
+  sync-argocd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ArgoCD sync
+        run: |
+          argocd app sync backend-app
+          argocd app sync frontend-app
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_TOKEN: ${{ secrets.ARGOCD_TOKEN }}
+
