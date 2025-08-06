@@ -138,7 +138,65 @@ output "ecr_repo_url" {
   value = aws_ecr_repository.backend.repository_url
 }
 
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "backend-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "backend"
+      image     = "${aws_ecr_repository.backend.repository_url}:latest"
+      portMappings = [
+        {
+          containerPort = 5000
+          hostPort      = 5000
+        }
+      ],
+      environment = [
+        {
+          name  = "DB_HOST"
+          value = module.db.db_instance_endpoint
+        },
+        {
+          name  = "DB_NAME"
+          value = "petstoredb"
+        },
+        {
+          name  = "DB_USER"
+          value = "admin"
+        },
+        {
+          name  = "DB_PASSWORD"
+          value = "changeMe1234!"
+        }
+      ]
+    }
+  ])
+}
+
 output "rds_endpoint" {
   value = module.db.db_instance_endpoint
 }
 
+resource "aws_ecs_service" "backend" {
+  name            = "backend-service"
+  cluster         = aws_ecs_cluster.main.id
+  launch_type     = "FARGATE"
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = 1
+
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [module.vpc.default_security_group_id]
+    assign_public_ip = false
+  }
+
+  depends_on = [
+    aws_ecs_cluster.main,
+    aws_ecs_task_definition.backend
+  ]
+}
