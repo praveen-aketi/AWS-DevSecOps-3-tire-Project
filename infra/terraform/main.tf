@@ -149,7 +149,7 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "${aws_ecr_repository.backend.repository_url}:latest"
+      image = "${var.aws_account_id}.dkr.ecr.${var.region}.amazonaws.com/aws-devsecops-backend:latest"
       portMappings = [
         {
           containerPort = 5000
