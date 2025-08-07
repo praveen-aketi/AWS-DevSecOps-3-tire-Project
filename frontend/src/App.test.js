@@ -3,7 +3,7 @@ import App from './App';
 
 test('renders welcome message', () => {
   render(<App />);
-  const linkElement = screen.getByText(/Welcome to SecurePetStore/i);
-  expect(linkElement).toBeInTheDocument();
+  const heading = screen.getByText(/Welcome to Secure Pet Store/i); // Add spaces
+  expect(heading).toBeInTheDocument();
 });
 
