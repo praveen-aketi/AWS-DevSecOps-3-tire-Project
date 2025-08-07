@@ -1,79 +1,151 @@
-# AWS-DevSecOps-3-tire-Project
-# SecurePetStore DevSecOps Project 🚀
+# SecurePetStore: End-to-End AWS DevSecOps Project (3-Tier Architecture)
 
-A production-quality, **3-tier DevSecOps project** on AWS using **Terraform**, **EKS**, **Helm**, **ArgoCD**, and integrated security tools.
+## Project Overview
 
----
-
-## 🧾 Tech Stack Overview
-
-| Layer           | Technology / Tools                                      |
-|----------------|----------------------------------------------------------|
-| IaC            | Terraform (managing VPC, ECR, IAM, EKS, NodeGroup)       |
-| CI             | GitHub Actions                                           |
-| CD             | Argo CD                                                  |
-| Container Registry | AWS ECR                                             |
-| Orchestration  | AWS EKS (Kubernetes)                                     |
-| Kubernetes Mgmt| Helm (for packaging and deployment)                      |
-| Security Scans | Trivy, SonarQube, JFrog Xray, Checkov, CodeQL           |
-| Monitoring     | CloudWatch / (optional) Prometheus + Grafana             |
-| DB             | AWS RDS (PostgreSQL) — can be added later                |
+SecurePetStore is a secure, production-ready, full-stack 3-tier application deployed on Amazon EKS using a complete DevSecOps pipeline. It includes a React-based frontend, a Node.js (Express) backend, PostgreSQL as the database, and various security scanning, testing, and deployment stages.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
-```
-
+```bash
 AWS-DevSecOps-3-tire-Project/
-│
-├── backend/                   # Your application code (Node.js)
-├── frontend/                  # Your frontend application (React or static)
-│
-├── helm/
-│   ├── backend/               # Helm chart for backend
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   └── templates/
-│   │       ├── deployment.yaml
-│   │       ├── service.yaml
-│   │       └── _helpers.tpl
-│   └── frontend/              # Helm chart for frontend
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       └── templates/
-│           ├── deployment.yaml
-│           └── service.yaml
-│
-├── infra/terraform/           # Terraform for AWS infra, including EKS
-│   ├── main.tf
-│   ├── eks.tf
-│   └── other Terraform files
-│
-├── .github/workflows/         # Security & CI workflows
-│   ├── trivy.yml
-│   ├── checkov.yml
-│   ├── codeql.yml
-│   ├── sonar.yml
-│   ├── backend-ci.yml
-│   └── frontend-ci.yml
-│
-└── argocd/                    # GitOps specifications for ArgoCD
-    ├── backend-app.yaml
-    └── frontend-app.yaml
-
+├── backend/                    # Node.js + Express backend API
+├── frontend/                   # React frontend
+├── infra/terraform/            # Terraform code for EKS & supporting infra
+├── charts/                     # Helm charts for backend and frontend
+├── argocd/                     # Argo CD app definitions
+└── .github/workflows/          # GitHub Actions CI/CD pipelines
 ```
 
 ---
 
-## 🚀 Step-by-Step Workflow
+## Technology Stack
 
-### 1. **Set up AWS Infrastructure (Terraform + EKS)**
+| Layer            | Tech Stack                              |
+| ---------------- | --------------------------------------- |
+| Frontend         | React.js                                |
+| Backend          | Node.js (Express)                       |
+| Database         | PostgreSQL                              |
+| Containerization | Docker                                  |
+| Orchestration    | Amazon EKS (Elastic Kubernetes Service) |
+| IaC              | Terraform                               |
+| CI/CD            | GitHub Actions + Argo CD                |
+| Helm             | Kubernetes Package Management           |
+| Security         | Trivy, Checkov, CodeQL, SonarCloud      |
 
-- Define EKS cluster, node group, IAM roles, and security groups in `infra/terraform/*.tf`
-- Configure variables in `terraform.tfvars` (account ID, subnet IDs, ECR repo names, etc.)
+---
 
-**Commands:**
+## Prerequisites
+
+* AWS CLI & IAM configured
+* kubectl configured
+* Terraform installed
+* Docker installed
+* Node.js and npm (for local testing)
+* Argo CD running on EKS
+
+---
+
+## How to Run Locally (Development Testing)
+
+### 1. **Backend**
+
+```bash
+cd backend
+npm install
+npm test            # Run unit tests
+npm start           # Starts server on port 3000
+```
+
+### 2. **Frontend**
+
+```bash
+cd frontend
+npm install
+npm test            # Run React unit tests
+npm start           # Opens on http://localhost:3000
+```
+
+---
+
+## CI/CD Pipeline Stages (`.github/workflows/`)
+
+### ✅ **1. Code Quality & Static Analysis**
+
+* **Tool**: CodeQL (`codeql.yml`)
+* **Stage**: On PR & push to `main`
+* **What it Validates**: Common vulnerabilities in JS code (e.g., SQL injection, XSS)
+
+### ✅ **2. Infrastructure Scan**
+
+* **Tool**: Checkov (`checkov.yml`)
+* **Stage**: On push/PR to `infra/terraform`
+* **What it Validates**: Terraform misconfigurations, insecure settings
+
+### ✅ **3. Docker Image Scan**
+
+* **Tool**: Trivy (`trivy.yml`)
+* **Stage**: On image build (before pushing to ECR)
+* **What it Validates**: OS & app dependency vulnerabilities
+
+### ✅ **4. Unit Tests (CI)**
+
+* **Tool**: Jest, React Testing Library (`unit-test.yml`)
+* **Stage**: On every PR and push
+* **What it Validates**: Functional correctness of backend & frontend logic
+
+### ✅ **5. SonarCloud Quality Gate**
+
+* **Tool**: SonarCloud (`sonar.yml`)
+* **Stage**: On PR
+* **What it Validates**: Bugs, code smells, test coverage, duplication
+
+### ✅ **6. Build & Push Docker Images**
+
+* **Workflow**: `ecr-push.yml`
+* **Stage**: On push to `main` branch
+* **Steps**:
+
+  * Build Docker images for frontend & backend
+  * Run Trivy scan
+  * Push to AWS ECR
+
+---
+
+## CD Pipeline (Argo CD)
+
+### ✅ **7. Continuous Deployment with Argo CD**
+
+* **Files**: `argocd/backend-app.yaml`, `argocd/frontend-app.yaml`
+* **What it Does**:
+
+  * Tracks Helm chart repo and syncs deployment automatically
+  * Visual GitOps interface to manage Kubernetes workloads
+
+---
+
+## Helm Charts
+
+Each app has a separate Helm chart with:
+
+* `deployment.yaml`: defines pods, replicas, containers
+* `service.yaml`: exposes internal Kubernetes service
+* `values.yaml`: customizable config (image tags, ports, etc.)
+
+---
+
+## Terraform Modules (Infrastructure Setup)
+
+### ✅ Resources Created
+
+* VPC, Subnets, IGW, Route Tables
+* EKS Cluster
+* EKS Node Groups
+* IAM Roles for EKS & Nodes
+
+### Steps to Deploy Infra:
+
 ```bash
 cd infra/terraform
 terraform init
@@ -81,87 +153,52 @@ terraform plan
 terraform apply
 ```
 
----
+Output will include:
 
-### 2. **Build and Push Docker Images to AWS ECR**
-
-This is automatically triggered by GitHub Actions:
-
-- `backend-ci.yml` builds and pushes backend Docker image from `backend/`
-- `frontend-ci.yml` builds and pushes frontend image from `frontend/`
-
-Make sure you have set the following **GitHub Secrets**:
-```
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION (e.g., ap-south-1)
-AWS_ACCOUNT_ID
-ECR_REPOSITORY_BACKEND
-ECR_REPOSITORY_FRONTEND
-```
+* EKS Cluster name
+* Kubeconfig for access
 
 ---
 
-### 3. **Security Scans via GitHub Actions**
+## Production Deployment Flow
 
-Run on every push to `main`:
-
-- `trivy.yml` – Scan Docker images for vulnerabilities
-- `checkov.yml` – Scan Terraform for misconfigurations
-- `codeql.yml` – Analyze code for vulnerabilities
-- `sonar.yml` – Code quality and static analysis
-- **(Optional)** JFrog Xray for artifact scanning
+1. **Dev/Test Your Code Locally**
+2. **Push Code to GitHub → Triggers CI Workflows**
+3. **Image Build → Trivy Scan → Push to ECR**
+4. **Argo CD Watches Helm Charts → Auto Deployment**
+5. **App is Deployed to EKS in Production**
 
 ---
 
-### 4. **Deploy Apps to EKS via Helm + ArgoCD**
+## Monitoring (Optional Enhancements)
 
-- Applications are packaged using Helm charts in `helm/`
-- ArgoCD pulls the charts and deploys them to EKS
-
-**Steps:**
-```bash
-# Install ArgoCD CLI
-brew install argocd
-
-# Login and configure ArgoCD (if not using ArgoCD UI)
-argocd login <ARGO_SERVER>
-argocd app create backend --repo <git-url> --path helm/backend --dest-server https://kubernetes.default.svc --dest-namespace default
-argocd app sync backend
-
-argocd app create frontend --repo <git-url> --path helm/frontend --dest-server https://kubernetes.default.svc --dest-namespace default
-argocd app sync frontend
-```
+* Integrate Prometheus + Grafana for metrics
+* Fluent Bit for logs
+* AWS CloudWatch or Loki for log aggregation
 
 ---
 
-### 5. **Access & Testing**
+## Security Best Practices Followed
 
-- **Frontend**: Exposed using `LoadBalancer` service via ArgoCD Helm values
-- **Backend**: Internal ClusterIP or port-forward if needed
-
-```bash
-kubectl get svc
-kubectl port-forward svc/backend-service 8080:3000
-```
+* IaC scanning with Checkov
+* Image scanning with Trivy
+* Code analysis with CodeQL
+* Secure Helm templates (no hardcoded secrets)
+* EKS with IAM roles and least-privilege access
 
 ---
 
-## ✅ Summary: What Each Step Does
+## Future Enhancements
 
-| Phase                  | Purpose                                                                |
-|------------------------|------------------------------------------------------------------------|
-| **Terraform infra**    | Create AWS VPC, subnets, ECR, IAM roles, EKS cluster & worker nodes    |
-| **Docker + CI**        | Build/push Docker images automatically via GitHub Actions              |
-| **Security**           | Run Trivy, Checkov, CodeQL, Sonar, JFrog scans                         |
-| **Helm Charts**        | Define Kubernetes deployments/services for frontend and backend        |
-| **CD via ArgoCD**      | Auto-deploy and manage releases in EKS using Helm and GitOps           |
-| **Access**             | Frontend exposed; backend internally accessed or port-forwarded        |
+* Add integration & e2e tests
+* Implement Argo Rollouts for blue/green deployments
+* Setup KEDA for auto-scaling based on metrics
 
 ---
 
-## 🧠 Final Notes
+## Author
 
-This updated setup implements **GitOps**, **DevSecOps**, and **Infrastructure as Code** principles using a production-grade toolchain.
+Praveen Ayyappa
+[GitHub](https://github.com/praveen-aketi)
 
-Let me know if you want help with Helm values files or ArgoCD app automation!
+---
