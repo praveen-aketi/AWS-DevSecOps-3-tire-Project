@@ -2,40 +2,23 @@ import React, { useEffect, useState } from 'react';
 
 function App() {
   const [pets, setPets] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/pets')
-      .then(response => response.json())
-      .then(data => {
-        setPets(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching pets:', error);
-        setLoading(false);
-      });
+    fetch("http://localhost:3000/api/pets")
+      .then((response) => response.json())
+      .then((data) => setPets(data))
+      .catch((error) => console.error("Error fetching pets:", error));
   }, []);
 
   return (
-    <div style={{ textAlign: 'center', fontFamily: 'Arial' }}>
-      <h1>🐾 Welcome to Secure Pet Store 🐾</h1>
-      <p>Pets list from backend:</p>
-      {loading ? (
-        <p>Loading pets...</p>
-      ) : (
-        <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {pets.length > 0 ? (
-            pets.map(pet => (
-              <li key={pet.id} style={{ margin: '8px 0' }}>
-                🐶 {pet.name}
-              </li>
-            ))
-          ) : (
-            <p>No pets found.</p>
-          )}
-        </ul>
-      )}
+    <div>
+      <h1>Welcome to Secure Pet Store</h1>
+      <h2>Pets list from backend:</h2>
+      <ul>
+        {pets.map((pet) => (
+          <li key={pet.id}>{pet.name}</li>
+        ))}
+      </ul>
     </div>
   );
 }
