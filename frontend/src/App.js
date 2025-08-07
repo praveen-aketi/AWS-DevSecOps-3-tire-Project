@@ -5,7 +5,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/pets')
+    fetch('http://localhost:3000/api/pets')
       .then(response => response.json())
       .then(data => {
         setPets(data);

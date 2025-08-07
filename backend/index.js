@@ -1,6 +1,24 @@
-const app = require("./app");
-const port = 3000;
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const PORT = 3000;
 
-app.listen(port, () => {
-  console.log(`SecurePetStore API running on port ${port}`);
+// Enable CORS
+app.use(cors());
+
+// Sample pets data
+const pets = [
+  { id: 1, name: 'Fluffy' },
+  { id: 2, name: 'Max' },
+  { id: 3, name: 'Whiskers' }
+];
+
+// API endpoint
+app.get('/api/pets', (req, res) => {
+  res.json(pets);
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`SecurePetStore API running on port ${PORT}`);
 });
