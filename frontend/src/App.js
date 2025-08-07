@@ -4,7 +4,7 @@ function App() {
   const [pets, setPets] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/pets")
+    fetch("http://localhost:8080/api/pets")
       .then((response) => response.json())
       .then((data) => setPets(data))
       .catch((error) => console.error("Error fetching pets:", error));
