@@ -1,6 +1,6 @@
 # 🛡️ SecurePetStore: AWS DevSecOps 3-Tier Project
 ## 📌 Current Status
-**Enterprise‑grade implementation completed** – all backend, frontend, security, DevOps, CI/CD, Docker, and documentation are in place and ready for production.
+- Project updated for production readiness: Terraform remote state bootstrap (S3 + DynamoDB) added, sensitive values moved to AWS Secrets Manager, CI workflows updated to inject secrets from GitHub Actions. Backend listens on port 8080; frontend serves static assets on 3000.
 
 ## 🛠️ Tools & Technologies
 - **Backend:** Node.js 18, Express, PostgreSQL, JWT, Bcrypt, Joi, Helmet, Winston, Swagger
@@ -87,164 +87,74 @@
 ## 🧪 How to Run Locally
 
 ### Prerequisites
+- Docker
+- Node.js and npm
+- Git
 
-* Docker
-* Node.js and npm
-* Git
+### Backend (local with Docker Compose)
 
-### Backend
+The backend expects `DB_PASSWORD` to be supplied via environment or a local `.env` file (avoid committing secrets).
 
-**Note:** The backend automatically falls back to mock data if PostgreSQL is not available, so you can run it locally without database setup.
+Create a `.env` in the repo root with:
 
-1. Install dependencies and start the server:
-   ```bash
-   cd backend
-   npm install
-   npm start
-   ```
+```
+DB_USER=admin
+DB_PASSWORD=yourpassword
+DB_NAME=petstoredb
+```
 
-2. (Optional) To connect to a real PostgreSQL database, create a `.env` file in the `backend` directory:
-   ```bash
-   DB_USER=postgres
-   DB_HOST=localhost
-   DB_NAME=petstoredb
-   DB_PASSWORD=yourpassword
-   DB_PORT=5432
-   ```
+Start services with Docker Compose:
 
-### Frontend
+```bash
+docker-compose up --build
+```
 
-1. Install dependencies and start the application:
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
+The backend will be available at http://localhost:8080 and includes health endpoints:
+- GET /health  -> basic liveness
+- GET /health/live
+- GET /health/ready
 
-2. (Optional) To change the backend API URL, create a `.env` file in the `frontend` directory:
-   ```bash
-   REACT_APP_API_URL=http://localhost:8080/api/pets
-   ```
+### Frontend (local)
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Frontend served on http://localhost:3000 and expects the API at REACT_APP_API_URL (default: http://localhost:8080/api/v1).
 
 ### Local Testing
 
 ```bash
-# Frontend
-cd frontend
+# Backend tests
+cd backend
 npm test
 
-# Backend
-cd backend
+# Frontend tests
+cd frontend
 npm test
 ```
 
 ### Docker Local (optional)
 
 ```bash
-# Build & run frontend
-cd frontend
-docker build -t securepetstore-frontend .
+# Frontend
+docker build -t securepetstore-frontend ./frontend
 docker run -p 3000:3000 securepetstore-frontend
 
-# Build & run backend
-cd backend
-docker build -t securepetstore-backend .
-docker run -p 5000:5000 securepetstore-backend
+# Backend
+docker build -t securepetstore-backend ./backend
+docker run -p 8080:8080 securepetstore-backend
 ```
 
 ---
 
-## 🚀 Step-by-Step Production Deployment (AWS)
+## 🔐 Terraform remote state & Secrets (bootstrap & CI)
 
-### STEP 1️⃣: Provision AWS EKS Cluster using Terraform
+This project uses a remote S3 backend and a DynamoDB table for Terraform state locking. The repository includes bootstrap resources to create the S3 bucket + DynamoDB table, but you must bootstrap and reconfigure the backend before using remote state.
 
-```bash
-cd infra/terraform
-terraform init
-terraform plan
-terraform apply
-```
-
-**🔍 What happens?**
-
-* Creates VPC, IAM roles, EKS cluster and node group
-
----
-
-### STEP 2️⃣: Configure kubectl to access the EKS cluster
-
-```bash
-aws eks update-kubeconfig --region <your-region> --name <your-cluster-name>
-kubectl get nodes
-```
-
-**🔍 What happens?**
-
-* Sets up your local kubeconfig to manage EKS cluster
-
----
-
-### STEP 3️⃣: Install Argo CD
-
-```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-```
-
-**🔍 What happens?**
-
-* Deploys Argo CD into the cluster
-
----
-
-### STEP 4️⃣: Deploy Backend & Frontend via ArgoCD
-
-```bash
-kubectl apply -f argocd/
-```
-
-**🔍 What happens?**
-
-* ArgoCD detects `charts/*` and installs Helm charts into Kubernetes
-* Apps are deployed and synced automatically (GitOps)
-
----
-
-### STEP 5️⃣: Access the Application
-
-```bash
-kubectl get svc -n <namespace>
-```
-
-**🔍 What happens?**
-
-* Use LoadBalancer/Ingress IP to open frontend in browser
-
----
-
-## 🔐 DevSecOps Toolchain Summary
-
-| Stage            | Tool              | Purpose                           |
-| ---------------- | ----------------- | --------------------------------- |
-| CI/CD            | GitHub Actions    | Build, test, scan, deploy         |
-| IaC              | Terraform         | Create AWS EKS cluster            |
-| Static Code Scan | CodeQL, SonarQube | Detect code vulnerabilities       |
-| IaC Scan         | Checkov           | Scan Terraform files              |
-| Image Scanning   | Trivy             | Scan Docker image vulnerabilities |
-| Unit Testing     | Jest/Mocha        | Backend & frontend testing        |
-| GitOps CD        | Argo CD           | Kubernetes deployment from Git    |
-| Helm Charts      | Helm              | Kubernetes manifests packaging    |
-
----
-
-## 🔐 Terraform remote state & Secrets
-
-This project uses Terraform for infrastructure provisioning. For team environments, use a remote S3 backend with DynamoDB locking.
-
-### Bootstrapping remote state (one-time)
-
-1. Ensure AWS credentials with sufficient permissions are available locally.
-2. Run the following to create the S3 bucket and DynamoDB table defined in `infra/terraform/main.tf`:
+One-time bootstrap (creates remote state resources):
 
 ```bash
 cd infra/terraform
@@ -252,36 +162,32 @@ terraform init
 terraform apply
 ```
 
-3. Update `infra/terraform/backend.tf` with the actual bucket and table names (replace `<YOUR_AWS_ACCOUNT_ID>` and `<AWS_REGION>`).
-4. Reconfigure Terraform backend:
+Then update `infra/terraform/backend.tf` with the created bucket and table names and run:
 
 ```bash
 terraform init -reconfigure
 ```
 
-5. (Optional) Migrate local state to the remote backend if needed.
-
-### Supplying secrets & images in CI
-
-Add the following repository secrets in GitHub (Repository Settings → Secrets → Actions):
+Supply secrets securely (recommended: GitHub Actions Secrets):
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION` (e.g. `ap-south-1`)
-- `DB_PASSWORD` (database admin password)
-- `BACKEND_IMAGE` (ECR image URI for backend)
-- `FRONTEND_IMAGE` (ECR image URI for frontend)
+- `AWS_REGION`
+- `DB_PASSWORD` (used to populate Secrets Manager during bootstrap if provided via TF_VAR)
+- `BACKEND_IMAGE` and `FRONTEND_IMAGE` (image URIs for Terraform)
 
-The CI workflow uses these secrets to run `terraform plan` and to set TF_VAR_* values.
+The CI workflow `/.github/workflows/ci.yml` is configured to pass `TF_VAR_db_password`, `TF_VAR_backend_image`, and `TF_VAR_frontend_image` from GitHub Secrets to Terraform during plan.
+
+> Important: Do NOT store secrets in `terraform.tfvars` or code. Use GitHub Secrets or the `-var` CLI flag.
 
 ---
 
-## 🧹 Cleanup (Optional)
+## 🚀 Deployment (EKS / ArgoCD)
 
-```bash
-cd infra/terraform
-terraform destroy
-```
+1. Bootstrap infra (see Terraform steps above).
+2. Build and push container images to ECR (or a registry) and set `BACKEND_IMAGE`/`FRONTEND_IMAGE` secrets.
+3. Configure kubectl for EKS and install ArgoCD as described in `argocd/`.
+4. Use the Helm charts in `charts/` (backend frontend) — they include basic probes and resource requests.
 
 ---
 

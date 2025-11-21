@@ -255,8 +255,8 @@ resource "aws_ecs_task_definition" "backend" {
       image = var.backend_image
       portMappings = [
         {
-          containerPort = 5000
-          hostPort      = 5000
+          containerPort = 8080
+          hostPort      = 8080
         }
       ],
       environment = [
