@@ -100,11 +100,35 @@ npm start
 
 ### Backend
 
-```bash
-cd backend
-npm install
-npm start
-```
+1. Create a `.env` file in the `backend` directory (optional, defaults are set in `app.js`):
+   ```bash
+   DB_USER=postgres
+   DB_HOST=localhost
+   DB_NAME=petstoredb
+   DB_PASSWORD=postgres
+   DB_PORT=5432
+   ```
+
+2. Install dependencies and start the server:
+   ```bash
+   cd backend
+   npm install
+   npm start
+   ```
+
+### Frontend
+
+1. Create a `.env` file in the `frontend` directory to point to your backend API:
+   ```bash
+   REACT_APP_API_URL=http://localhost:8080/api/pets
+   ```
+
+2. Install dependencies and start the application:
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
 
 ### Local Testing
 
