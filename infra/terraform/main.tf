@@ -108,7 +108,7 @@ module "db" {
   allocated_storage    = 20
   max_allocated_storage = 50
 
-  name     = "petstoredb"
+  db_name  = "petstoredb"
   username = "admin"
   password = var.db_password
 
