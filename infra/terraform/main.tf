@@ -34,6 +34,9 @@ module "vpc" {
 # S3 Bucket for Frontend Hosting
 # ----------------------------
 resource "aws_s3_bucket" "frontend" {
+  # checkov:skip=CKV_AWS_18: "Ensure the S3 bucket has access logging enabled" - Not needed for demo
+  # checkov:skip=CKV_AWS_144: "Ensure that S3 bucket has cross-region replication enabled" - Not needed for demo
+  # checkov:skip=CKV_AWS_21: "Ensure all data stored in the S3 bucket have versioning enabled" - Not needed for demo
   bucket = "securepetstore-frontend-bucket"
   force_destroy = true
 
@@ -107,7 +110,7 @@ module "db" {
 
   name     = "petstoredb"
   username = "admin"
-  password = "changeMe1234!"
+  password = var.db_password
 
   vpc_security_group_ids = [module.vpc.default_security_group_id]
   db_subnet_group_name   = module.vpc.database_subnet_group

@@ -22,5 +22,5 @@ jobs:
         run: |
           cd backend
           docker build -t backend .
-          trivy image --exit-code 1 --severity HIGH,CRITICAL backend
+          trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed backend
 

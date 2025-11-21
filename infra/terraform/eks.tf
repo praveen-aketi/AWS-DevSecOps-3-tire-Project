@@ -1,6 +1,4 @@
-provider "aws" {
-  region = "us-east-1"
-}
+
 
 resource "aws_eks_cluster" "devsecops_cluster" {
   name     = "aws-devsecops-cluster"
