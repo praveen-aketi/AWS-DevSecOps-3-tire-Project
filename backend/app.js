@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 app.use(cors());
@@ -25,7 +26,15 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-app.get("/api/pets", async (req, res) => {
+// Apply rate limiter to /api/pets endpoint
+const petsApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+app.get("/api/pets", petsApiLimiter, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM pets");
     res.json(result.rows);
