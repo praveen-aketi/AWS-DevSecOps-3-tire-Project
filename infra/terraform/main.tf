@@ -108,6 +108,46 @@ module "db" {
 }
 
 # ----------------------------
+# Terraform Remote State (bootstrap resources)
+# ----------------------------
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "securepetstore-terraform-state-${var.aws_account_id}"
+  acl    = "private"
+
+  versioning {
+    enabled = true
+  }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  tags = {
+    Name    = "SecurePetStoreTerraformState"
+    Project = "SecurePetStore"
+  }
+}
+
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "securepetstore-terraform-locks-${var.aws_account_id}"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+
+  tags = {
+    Project = "SecurePetStore"
+  }
+}
+
+# ----------------------------
 # Outputs
 # ----------------------------
 output "vpc_id" {
@@ -124,6 +164,18 @@ output "ecs_cluster_name" {
 
 output "ecr_repo_url" {
   value = aws_ecr_repository.backend.repository_url
+}
+
+output "rds_endpoint" {
+  value = module.db.db_instance_endpoint
+}
+
+output "terraform_state_bucket_name" {
+  value = aws_s3_bucket.terraform_state.bucket
+}
+
+output "terraform_lock_table_name" {
+  value = aws_dynamodb_table.terraform_locks.name
 }
 
 resource "aws_iam_role" "ecs_task_execution" {
@@ -149,6 +201,44 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Add a task IAM role for containers (allows access to Secrets Manager for DB password)
+resource "aws_iam_role" "ecs_task_role" {
+  name = "ecsTaskRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Effect = "Allow",
+        Sid    = ""
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "ecs_task_secrets_policy" {
+  name = "ecs-task-secrets-policy"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        Resource = aws_secretsmanager_secret.db_password.arn
+      }
+    ]
+  })
+}
+
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend-task"
   network_mode             = "awsvpc"
@@ -156,6 +246,7 @@ resource "aws_ecs_task_definition" "backend" {
   cpu                      = "256"
   memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
@@ -180,19 +271,16 @@ resource "aws_ecs_task_definition" "backend" {
         {
           name  = "DB_USER"
           value = "admin"
-        },
+        }
+      ],
+      secrets = [
         {
-          name  = "DB_PASSWORD"
-          # Prefer injecting via secrets in production; using var.db_password for now.
-          value = var.db_password
+          name      = "DB_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.db_password.arn
         }
       ]
     }
   ])
-}
-
-output "rds_endpoint" {
-  value = module.db.db_instance_endpoint
 }
 
 resource "aws_ecs_service" "backend" {
@@ -212,4 +300,15 @@ resource "aws_ecs_service" "backend" {
     aws_ecs_cluster.main,
     aws_ecs_task_definition.backend
   ]
+}
+
+resource "aws_secretsmanager_secret" "db_password" {
+  name        = "securepetstore-db-password"
+  description = "Database admin password for SecurePetStore. Stored in Secrets Manager."
+}
+
+resource "aws_secretsmanager_secret_version" "db_password_version" {
+  secret_id     = aws_secretsmanager_secret.db_password.id
+  # Store the password as the raw secret string so ECS secrets map directly to the password value.
+  secret_string = var.db_password
 }

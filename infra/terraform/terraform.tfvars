@@ -3,5 +3,4 @@ backend_image  = "your_aws_account_id.dkr.ecr.ap-south-1.amazonaws.com/aws-devse
 frontend_image = "your_aws_account_id.dkr.ecr.ap-south-1.amazonaws.com/aws-devsecops-frontend:latest"
 vpc_id         = "vpc-xxxxxxxx"
 subnet_ids     = ["subnet-abc", "subnet-def"]
-db_password    = "changeMe1234!"
 
