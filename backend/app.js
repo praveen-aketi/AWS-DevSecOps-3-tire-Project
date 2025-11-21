@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const { swaggerUi, swaggerDocs } = require('./src/config/swagger');
 const { correlationIdMiddleware, requestLoggerMiddleware } = require('./src/middleware/logging');
 const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
+const securityMiddleware = require('./src/middleware/security');
 const logger = require('./src/config/logger');
 
 // Import routes
@@ -11,6 +12,9 @@ const petRoutes = require('./src/routes/petRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
+
+// Security middleware (helmet, sanitization, etc.)
+securityMiddleware(app);
 
 // Middleware
 app.use(cors());
@@ -43,11 +47,12 @@ app.get('/health', (req, res) => {
 
 app.get('/health/ready', async (req, res) => {
     // Check database connection
-    const pool = require('./src/config/database');
+    const { pool } = require('./src/config/database');
     try {
         await pool.query('SELECT 1');
         res.status(200).json({ status: 'ready', database: 'connected' });
     } catch (error) {
+        req.logger.error('Health check failed', { error: error.message });
         res.status(503).json({ status: 'not ready', database: 'disconnected' });
     }
 });

@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const { pool, queryWithRetry } = require('../config/database');
 const { NotFoundError } = require('../utils/errors');
 
 class PetService {
