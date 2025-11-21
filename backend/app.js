@@ -1,54 +1,75 @@
-const express = require("express");
-const cors = require("cors");
-const rateLimit = require("express-rate-limit");
+const express = require('express');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const { swaggerUi, swaggerDocs } = require('./src/config/swagger');
+const { correlationIdMiddleware, requestLoggerMiddleware } = require('./src/middleware/logging');
+const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
+const logger = require('./src/config/logger');
+
+// Import routes
+const petRoutes = require('./src/routes/petRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check
-app.get("/", (req, res) => {
-  res.send("Welcome to SecurePetStore Backend API!");
+// Logging middleware
+app.use(correlationIdMiddleware);
+app.use(requestLoggerMiddleware);
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Health checks
+app.get('/', (req, res) => {
+    res.send('Welcome to SecurePetStore Backend API!');
 });
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "healthy" });
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'healthy' });
 });
 
-// Pets endpoint
-const { Pool } = require("pg");
-
-const pool = new Pool({
-  user: process.env.DB_USER || "admin",
-  host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "petstoredb",
-  password: process.env.DB_PASSWORD || "changeMe1234!",
-  port: process.env.DB_PORT || 5432,
+app.get('/health/ready', async (req, res) => {
+    // Check database connection
+    const pool = require('./src/config/database');
+    try {
+        await pool.query('SELECT 1');
+        res.status(200).json({ status: 'ready', database: 'connected' });
+    } catch (error) {
+        res.status(503).json({ status: 'not ready', database: 'disconnected' });
+    }
 });
 
-// Apply rate limiter to /api/pets endpoint
-const petsApiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+app.get('/health/live', (req, res) => {
+    res.status(200).json({ status: 'alive' });
 });
 
-app.get("/api/pets", petsApiLimiter, async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM pets");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Database connection failed, returning mock data:", err.message);
-    // Fallback to mock data for local development
-    const mockPets = [
-      { id: 1, name: "Fluffy", species: "Cat", age: 3 },
-      { id: 2, name: "Max", species: "Dog", age: 5 },
-      { id: 3, name: "Whiskers", species: "Cat", age: 2 },
-      { id: 4, name: "Buddy", species: "Dog", age: 4 }
-    ];
-    res.json(mockPets);
-  }
+// API Routes v1
+app.use('/api/v1/pets', petRoutes);
+app.use('/api/v1/auth', authRoutes);
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Global error handler
+app.use(errorHandler);
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM signal received: closing HTTP server');
+    process.exit(0);
 });
 
 module.exports = app;
