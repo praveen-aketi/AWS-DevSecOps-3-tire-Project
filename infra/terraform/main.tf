@@ -12,7 +12,7 @@ provider "aws" {
 # ----------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "3.14.2"
+  version = "5.0.0"
 
   name = "securepetstore-vpc"
   cidr = "10.0.0.0/16"
