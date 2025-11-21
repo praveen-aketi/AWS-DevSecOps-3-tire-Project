@@ -1,14 +1,14 @@
-const petService = require('../src/services/petService');
-const { NotFoundError } = require('../src/utils/errors');
+const petService = require('../../src/services/petService');
+const { NotFoundError } = require('../../src/utils/errors');
 
 // Mock the database
-jest.mock('../src/config/database', () => ({
+jest.mock('../../src/config/database', () => ({
     pool: {
         query: jest.fn(),
     },
 }));
 
-const { pool } = require('../src/config/database');
+const { pool } = require('../../src/config/database');
 
 describe('PetService', () => {
     beforeEach(() => {
