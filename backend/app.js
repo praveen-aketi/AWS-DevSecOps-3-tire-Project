@@ -31,6 +31,13 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+// Dedicated rate limiter for health/ready endpoint: max 10 requests per minute per IP
+const healthReadyLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // limit each IP to 10 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 app.use('/api/', limiter);
 
 // API Documentation
@@ -45,7 +52,7 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'healthy' });
 });
 
-app.get('/health/ready', async (req, res) => {
+app.get('/health/ready', healthReadyLimiter, async (req, res) => {
     // Check database connection
     const { pool } = require('./src/config/database');
     try {
