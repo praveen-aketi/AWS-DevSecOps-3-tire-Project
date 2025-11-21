@@ -73,7 +73,7 @@ SecurePetStore is a cloud-native 3-tier web application for managing a virtual p
 
 * **Frontend:** React-based web UI
 * **Backend:** Node.js REST API
-* **Database:** (Simulated/mock, can be extended to RDS or MongoDB)
+* **Database:** PostgreSQL (with fallback to mock data for local development)
 
 **Deployment Targets:**
 
@@ -90,44 +90,38 @@ SecurePetStore is a cloud-native 3-tier web application for managing a virtual p
 * Node.js and npm
 * Git
 
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
 ### Backend
 
-1. Create a `.env` file in the `backend` directory (optional, defaults are set in `app.js`):
-   ```bash
-   DB_USER=postgres
-   DB_HOST=localhost
-   DB_NAME=petstoredb
-   DB_PASSWORD=postgres
-   DB_PORT=5432
-   ```
+**Note:** The backend automatically falls back to mock data if PostgreSQL is not available, so you can run it locally without database setup.
 
-2. Install dependencies and start the server:
+1. Install dependencies and start the server:
    ```bash
    cd backend
    npm install
    npm start
    ```
 
-### Frontend
-
-1. Create a `.env` file in the `frontend` directory to point to your backend API:
+2. (Optional) To connect to a real PostgreSQL database, create a `.env` file in the `backend` directory:
    ```bash
-   REACT_APP_API_URL=http://localhost:8080/api/pets
+   DB_USER=postgres
+   DB_HOST=localhost
+   DB_NAME=petstoredb
+   DB_PASSWORD=yourpassword
+   DB_PORT=5432
    ```
 
-2. Install dependencies and start the application:
+### Frontend
+
+1. Install dependencies and start the application:
    ```bash
    cd frontend
    npm install
    npm start
+   ```
+
+2. (Optional) To change the backend API URL, create a `.env` file in the `frontend` directory:
+   ```bash
+   REACT_APP_API_URL=http://localhost:8080/api/pets
    ```
 
 ### Local Testing
