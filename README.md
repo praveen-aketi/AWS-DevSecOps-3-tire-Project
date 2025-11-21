@@ -237,6 +237,45 @@ kubectl get svc -n <namespace>
 
 ---
 
+## 🔐 Terraform remote state & Secrets
+
+This project uses Terraform for infrastructure provisioning. For team environments, use a remote S3 backend with DynamoDB locking.
+
+### Bootstrapping remote state (one-time)
+
+1. Ensure AWS credentials with sufficient permissions are available locally.
+2. Run the following to create the S3 bucket and DynamoDB table defined in `infra/terraform/main.tf`:
+
+```bash
+cd infra/terraform
+terraform init
+terraform apply
+```
+
+3. Update `infra/terraform/backend.tf` with the actual bucket and table names (replace `<YOUR_AWS_ACCOUNT_ID>` and `<AWS_REGION>`).
+4. Reconfigure Terraform backend:
+
+```bash
+terraform init -reconfigure
+```
+
+5. (Optional) Migrate local state to the remote backend if needed.
+
+### Supplying secrets & images in CI
+
+Add the following repository secrets in GitHub (Repository Settings → Secrets → Actions):
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION` (e.g. `ap-south-1`)
+- `DB_PASSWORD` (database admin password)
+- `BACKEND_IMAGE` (ECR image URI for backend)
+- `FRONTEND_IMAGE` (ECR image URI for frontend)
+
+The CI workflow uses these secrets to run `terraform plan` and to set TF_VAR_* values.
+
+---
+
 ## 🧹 Cleanup (Optional)
 
 ```bash
