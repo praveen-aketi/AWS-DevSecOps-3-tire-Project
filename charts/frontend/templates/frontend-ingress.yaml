@@ -13,6 +13,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: frontend-service
+                # Service name must match the Service metadata.name (frontend)
+                name: frontend
                 port:
                   number: 80

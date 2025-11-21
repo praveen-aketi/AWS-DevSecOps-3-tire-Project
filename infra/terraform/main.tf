@@ -4,7 +4,7 @@
 # Provider Configuration
 # ----------------------------
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
 }
 
 # ----------------------------
@@ -49,26 +49,11 @@ resource "aws_s3_bucket" "frontend" {
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_policy" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = ["s3:GetObject"],
-        Resource  = ["${aws_s3_bucket.frontend.arn}/*"]
-      }
-    ]
-  })
+  # Harden S3 bucket by blocking public access by default.
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # ----------------------------
@@ -175,7 +160,8 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image = "${var.aws_account_id}.dkr.ecr.${var.region}.amazonaws.com/aws-devsecops-backend:latest"
+      # Use the image variable from terraform variables to avoid string assembly issues.
+      image = var.backend_image
       portMappings = [
         {
           containerPort = 5000
@@ -197,7 +183,8 @@ resource "aws_ecs_task_definition" "backend" {
         },
         {
           name  = "DB_PASSWORD"
-          value = "changeMe1234!"
+          # Prefer injecting via secrets in production; using var.db_password for now.
+          value = var.db_password
         }
       ]
     }

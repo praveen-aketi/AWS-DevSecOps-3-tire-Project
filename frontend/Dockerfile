@@ -12,7 +12,7 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init wget ca-certificates
 
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
@@ -30,6 +30,7 @@ EXPOSE 3000
 
 USER nodejs
 
+# Ensure healthcheck tool is present (wget installed above)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s CMD wget --quiet --tries=1 --spider http://localhost:3000 || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
