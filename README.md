@@ -1,12 +1,14 @@
 # 🛡️ SecurePetStore: AWS DevSecOps 3-Tier Project
+## 📌 Current Status
+**Enterprise‑grade implementation completed** – all backend, frontend, security, DevOps, CI/CD, Docker, and documentation are in place and ready for production.
 
-## 🧾 Project Name
-
-**SecurePetStore**
-
-## 🌐 Application Purpose
-
-SecurePetStore is a cloud-native 3-tier web application for managing a virtual pet store. It demonstrates best practices in DevSecOps by integrating secure development, infrastructure as code (IaC), containerization, automated testing, vulnerability scanning, GitOps, and CI/CD using AWS and Kubernetes.
+## 🛠️ Tools & Technologies
+- **Backend:** Node.js 18, Express, PostgreSQL, JWT, Bcrypt, Joi, Helmet, Winston, Swagger
+- **Frontend:** React 18, React Router v6, Axios, Context API
+- **DevOps:** Docker, Docker‑Compose, GitHub Actions, Terraform (IaC), Argo CD (GitOps), Helm
+- **Testing:** Jest, Supertest
+- **Security:** Helmet, express‑mongo‑sanitize, xss‑clean, hpp, rate‑limit, csurf
+- **Observability:** Structured JSON logging, correlation IDs, health‑check endpoints
 
 ---
 
